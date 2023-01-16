@@ -1,0 +1,141 @@
+
+
+Lexicon(n) = { Word(1), Word(2), Word(3), … Word(m)} 
+Lexicon(whole_population) = ∑ Lexicon(n)
+Semantics(n)t = { meanWord(1), meanWord(2), meanWord(3),… meanWord(m) }
+	meanWord(i) = w(i,1)Word(1) + w(i,2)Word(2) + …  w(i,i)Word(i) + …  w(i,j)Word(j) + … + w(i,m)Word(m)
+	where: 
+		w(i,i) = 1.0 
+		w(i,j) = weigth<Word(i),Word(j)> , iff Word(j) ∈ Lexicon(n)
+
+Speaker(i)t.: the node which utters a few words in a conversation with Listener(j), at timestep(t)
+Listener(j)t.: the node which listens the words from Speaker(i) at timestep(t)
+Conversation(i,j)t.: conversation between Speaker(i) and Listener(j) at timestep(t)
+Conversation-Rate (CR)t.: percentage of population talking at each timestep(t)
+P2P(t)t.: set of edges connecting Speakers to Listeners at timestep(t)
+
+t=0
+For Nodes (1 to n):  Node(j) receives initial random set of words from Lexicon(whole_population).
+	Step 1: random Words from Lexicon(whole_population) assigned to Node(j)
+	Lexicon(n) = { Word(1), Word(2), Word(3), … Word(m)}
+
+For Node(1 to n):  Node(j) receives initial random meanings {meanWord(m)} for each Word(i) in Lexicon(j), 
+          iff connections are established for <Word(i),Word(k)> ∈ Lexicon(j).
+	Step 1: random edges assigned to Word(i)
+	Step 2: random weight values [ 0 < w < 1 ] assigned to edges of Word(i) 
+	Semantics(n) = { meanWord(1), meanWord(2), meanWord(3),… meanWord(m) }
+	meanWord(i) = w(i,1)Word(1) + w(i,2)Word(2) + …  w(i,k)Word(k) + … + w(i,m)Word(m)
+
+t=1, Grouping
+	Step 1: random Nodes from (Population) are assigned to the set Speakers, considering CR
+		Speakers = { Node(1), …. Node(k)}, where number of Speakers = CR*Population/2
+	Step 2: random Nodes from (Population – Speakers) are assigned to the set Listeners, considering CR
+		Listeners = { Node(x), …. Node(y)}, where number of Listeners = CR*Population/2
+	Step 3: random connections assigned between (Speakers) and (Listeners) to set up peer-to-peer talks P2P
+		P2P = { <Node(1),Node(x)>,….. <Node(k),Node(y)>}
+
+t=1, Conversation
+	for Speakers(i): 
+		random Words(x) of the Lexicon(Speaker) are uttered to connected Listener in P2P
+		if Word(x) ∈ Lexicon(Listener), then:
+			Semantic(Listener) is updated),  => updateSemantic 
+		else:
+			Reservoir(Listener) is updated, => updateReservoir
+			if Word(x) achieves Threshold at Reservoir(Listener), then:
+				Lexicon(Listener) is updated
+
+t=1,  updates
+updateSemantic
+	considering Semantic(Listener) at t=0 is {meanWord(x)}
+	for (all Word(x) in conversation with Speaker at t=1) then:
+		Semantic(Listener)t+1 = AVG{ [meanWord(x)] + [meanWord(x)Speaker ]}
+		Semantic(Listener)t+1 = (1-h)meanWord(x) + (h)meanWord(x)Speaker 
+
+t=1, updates
+updateReservoir
+considering Reservoir(Listener) at t=0 is {Word(p)(rep), Word(q)(rep),…Word(z)(rep)}
+	where: (rep) means the number of times the Word was listened in previous conversations
+	and: Threshold is the limit of (rep) to move a Word from Reservoir to Lexicon
+for (all Word(x) in conversation with Speaker at t=1), then:
+	if Word(x) ∈ Reservoir(Listener)
+	Reservoir(Listener)t+1 = {Word(x)(rep+1}
+		if (rep+1) = Threshold, then:
+			Word(x) is moved from Reservoir(Listener) to Lexicon(Listener)t+1
+			meanWord(x) is added to Semantic(Listener)t+1 :
+				only considers Words that ∈ Lexicon(Listener)t+1
+				only considers weighted connections at the moving timestep 
+
+t=1,  updates
+updateForgetWord
+considering Lexicon(Listener) at t=0 is {Word(a)(lis), Word(b)(lis),…Word(y)(lis)}
+	where: (lis) means the number of times the Word was NOT listened in a previous direct sequence of conversations
+	and: Forget is the limit of (lis) to delete a Word from the Listener’s Lexicon 
+	for (all Word(y) in conversation with Speaker at t=1), then:
+		if (lis+1) = Forget, then:
+			Word(y) is deleted from Lexicon(Listener)t+1
+			meanWord(y) is deleted from Semantic(Listener)t+1
+
+t=t+1,  repeat
+	grouping
+	conversation
+	updateSemantic
+	updateReservoir
+	updateForgetWord
+
+
+
+#The pseudo code seems to be describing a simulation of a population of nodes communicating with one another, 
+#where each node has a lexicon and semantics that can be updated through conversation. However, there are a few mistakes and inconsistencies in the code.
+#First, it is not clear what the purpose of the "t=0" line is, as the initializations for the lexicon and semantics are performed later.
+
+#Second, in the for loop for "Node(1 to n)", it is not specified how the edges and weight values are assigned to the words in the lexicon.
+
+Third, in the "t=1, Grouping" section, it is not clear how the number of speakers and listeners is calculated.
+
+Fourth, in the "t=1, Conversation" section, it is not specified how the updateSemantic function is implemented.
+
+Here is an improved version of the code, incorporating suggestions to fix the mistakes mentioned above:
+
+import random
+
+# Initialize lexicon and semantics for each node
+n = 100  # number of nodes in the population
+population = range(1, n+1)
+lexicon = {i: set() for i in population}  # empty lexicon for each node
+semantics = {i: {} for i in population}  # empty semantics for each node
+
+# Assign initial set of words to each node's lexicon
+for i in population:
+    lexicon[i] = random.sample(whole_population_words, m)  # m is number of words in lexicon
+
+# Assign initial random meanings to each word in each node's lexicon
+for i in population:
+    for word in lexicon[i]:
+        semantics[i][word] = {j: random.random() for j in lexicon[i]}
+
+t = 1
+
+# Grouping
+CR = 0.5  # conversation rate
+speakers = random.sample(population, int(CR * n / 2))
+listeners = list(set(population) - set(speakers))
+P2P = {(i, j) for i in speakers for j in listeners}  # random connections between speakers and listeners
+
+# Conversation
+for (speaker, listener) in P2P:
+    words_uttered = random.sample(lexicon[speaker], k)  # k is number of words uttered in conversation
+    for word in words_uttered:
+        if word in lexicon[listener]:
+            # Update semantics of listener
+            semantics[listener][word] = (semantics[listener][word] + semantics[speaker][word])/2
+        else:
+            # Update reservoir of listener
+            reservoir[listener].append(word)
+            if len(reservoir[listener]) >= threshold:
+                # Update lexicon of listener
+                lexicon[listener].add(word)
+
+It should be noted that this code will require some additional components such as 'whole_population_words' and 'reservoir' 
+and 'threshold' in order to be executed properly.
+
+Also, updateSemantic function has been replaced by direct calculation of the average of the semantics of speaker and listener word.
